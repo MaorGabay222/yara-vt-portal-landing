@@ -3,307 +3,218 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YARA VT Portal — From Hash to Hunting Rule. In Seconds.</title>
-  <meta name="description" content="Automated YARA rule generation powered by Google Gemini, VirusTotal, and real sample validation inside a Docker sandbox." />
+  <title>YARA VT Portal — Automated Malware Intelligence & Self-Repairing YARA Generation</title>
+  <meta name="description" content="Bridging the gap between static analysis, threat intelligence, and Large Language Models. From hash to validated YARA rule in seconds." />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg:        #0A0F1F;
-      --bg-soft:   #0F172A;
-      --surface:   #111827;
-      --surface2:  #1F2937;
-      --accent:    #7C3AED;
-      --accent2:   #06B6D4;
-      --text:      #E5E7EB;
-      --muted:     #94A3B8;
-      --success:   #22C55E;
-      --border:    #22314D;
+      --bg:       #0A0F1F;
+      --bg-soft:  #0F172A;
+      --surface:  #111827;
+      --surface2: #1F2937;
+      --accent:   #7C3AED;
+      --accent2:  #06B6D4;
+      --text:     #E5E7EB;
+      --muted:    #94A3B8;
+      --success:  #22C55E;
+      --border:   #22314D;
+      --gold:     #F59E0B;
     }
-
     html { scroll-behavior: smooth; }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      line-height: 1.6;
-      overflow-x: hidden;
-    }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; line-height: 1.6; overflow-x: hidden; }
 
     /* ── NAV ── */
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
       padding: 1rem 2rem;
-      background: rgba(10,15,31,0.85);
-      backdrop-filter: blur(12px);
+      background: rgba(10,15,31,.9); backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--border);
     }
-    .nav-logo {
-      font-size: 1.1rem; font-weight: 700; letter-spacing: .03em;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .nav-links { display: flex; gap: 2rem; list-style: none; }
-    .nav-links a {
-      color: var(--muted); text-decoration: none; font-size: .9rem;
-      transition: color .2s;
-    }
+    .nav-logo { font-size: 1.05rem; font-weight: 800; background: linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-links { display: flex; gap: 1.8rem; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .87rem; transition: color .2s; }
     .nav-links a:hover { color: var(--text); }
-    .nav-cta {
-      padding: .45rem 1.1rem; border-radius: 6px;
-      background: var(--accent); color: #fff;
-      text-decoration: none; font-size: .85rem; font-weight: 600;
-      transition: opacity .2s;
-    }
+    .nav-cta { padding: .45rem 1.1rem; border-radius: 6px; background: var(--accent); color: #fff; text-decoration: none; font-size: .84rem; font-weight: 700; transition: opacity .2s; }
     .nav-cta:hover { opacity: .85; }
 
     /* ── HERO ── */
     .hero {
-      min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: 7rem 1.5rem 4rem;
-      position: relative; overflow: hidden;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      padding: 7rem 1.5rem 3rem; position: relative; overflow: hidden;
     }
-    .hero::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(124,58,237,.18) 0%, transparent 70%);
-      pointer-events: none;
+    .hero-video-wrap {
+      position: absolute; inset: 0; z-index: 0;
+      overflow: hidden;
     }
+    .hero-video-wrap video {
+      width: 100%; height: 100%; object-fit: cover;
+      opacity: .18; filter: saturate(.6);
+    }
+    .hero-video-wrap::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to bottom, rgba(10,15,31,.6) 0%, rgba(10,15,31,.85) 60%, var(--bg) 100%);
+    }
+    .hero-content { position: relative; z-index: 1; }
     .hero-badge {
       display: inline-flex; align-items: center; gap: .5rem;
       background: rgba(124,58,237,.15); border: 1px solid rgba(124,58,237,.4);
-      color: #a78bfa; border-radius: 999px;
-      padding: .35rem .9rem; font-size: .8rem; font-weight: 600;
-      margin-bottom: 1.8rem; letter-spacing: .05em; text-transform: uppercase;
+      color: #a78bfa; border-radius: 999px; padding: .35rem 1rem;
+      font-size: .78rem; font-weight: 700; margin-bottom: 1.8rem;
+      letter-spacing: .07em; text-transform: uppercase;
     }
-    .hero h1 {
-      font-size: clamp(2.2rem, 5vw, 4rem);
-      font-weight: 800; line-height: 1.15; max-width: 820px;
-      margin-bottom: 1.2rem;
+    .hero h1 { font-size: clamp(2.2rem,5vw,4.2rem); font-weight: 900; line-height: 1.1; max-width: 860px; margin-bottom: 1rem; }
+    .hero h1 span { background: linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-tagline {
+      font-size: clamp(.95rem,1.8vw,1.2rem); color: var(--muted);
+      max-width: 640px; margin: 0 auto 2.5rem;
     }
-    .hero h1 span {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .hero-sub {
-      font-size: clamp(1rem, 2vw, 1.25rem);
-      color: var(--muted); max-width: 620px; margin-bottom: 2.5rem;
-    }
-    .hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-bottom: 3.5rem; }
-    .btn-primary {
-      padding: .75rem 1.8rem; border-radius: 8px;
-      background: var(--accent); color: #fff;
-      text-decoration: none; font-weight: 700; font-size: 1rem;
-      transition: transform .15s, box-shadow .15s;
-      box-shadow: 0 0 24px rgba(124,58,237,.35);
-    }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 36px rgba(124,58,237,.5); }
-    .btn-secondary {
-      padding: .75rem 1.8rem; border-radius: 8px;
-      border: 1.5px solid var(--border); color: var(--text);
-      text-decoration: none; font-weight: 600; font-size: 1rem;
-      transition: border-color .2s, background .2s;
-    }
+    .hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-bottom: 3rem; }
+    .btn-primary { padding: .8rem 2rem; border-radius: 8px; background: var(--accent); color: #fff; text-decoration: none; font-weight: 700; font-size: 1rem; box-shadow: 0 0 28px rgba(124,58,237,.4); transition: transform .15s, box-shadow .15s; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 42px rgba(124,58,237,.6); }
+    .btn-secondary { padding: .8rem 2rem; border-radius: 8px; border: 1.5px solid var(--border); color: var(--text); text-decoration: none; font-weight: 600; font-size: 1rem; transition: border-color .2s, background .2s; }
     .btn-secondary:hover { border-color: var(--accent2); background: rgba(6,182,212,.08); }
+    .hero-stats { display: flex; gap: 2.5rem; justify-content: center; flex-wrap: wrap; }
+    .hero-stat { text-align: center; }
+    .hero-stat-num { font-size: 2rem; font-weight: 900; background: linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-stat-label { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
 
-    /* ── TERMINAL ── */
-    .terminal {
-      width: 100%; max-width: 780px;
-      background: #0d1117; border: 1px solid var(--border);
-      border-radius: 12px; overflow: hidden;
-      box-shadow: 0 24px 80px rgba(0,0,0,.6);
-    }
-    .terminal-bar {
-      background: #161b22; padding: .65rem 1rem;
-      display: flex; align-items: center; gap: .5rem;
-    }
-    .dot { width: 12px; height: 12px; border-radius: 50%; }
-    .dot-r { background: #ff5f57; }
-    .dot-y { background: #febc2e; }
-    .dot-g { background: #28c840; }
-    .terminal-body { padding: 1.4rem 1.6rem; font-family: 'Courier New', monospace; font-size: .82rem; line-height: 1.7; text-align: left; }
-    .t-dim  { color: #4b5563; }
-    .t-grn  { color: var(--success); }
-    .t-cyn  { color: var(--accent2); }
-    .t-pur  { color: #a78bfa; }
-    .t-yel  { color: #fbbf24; }
-    .t-wht  { color: #e5e7eb; }
-    .t-red  { color: #f87171; }
-    .cursor { display: inline-block; width: 8px; height: 1em; background: var(--accent2); animation: blink 1s step-end infinite; vertical-align: text-bottom; }
-    @keyframes blink { 50% { opacity: 0; } }
-
-    /* ── SECTION SHARED ── */
+    /* ── SHARED ── */
     section { padding: 5rem 1.5rem; }
-    .container { max-width: 1100px; margin: 0 auto; }
-    .section-label {
-      font-size: .75rem; font-weight: 700; letter-spacing: .12em;
-      text-transform: uppercase; color: var(--accent2);
-      margin-bottom: .8rem;
-    }
-    .section-title {
-      font-size: clamp(1.7rem, 3.5vw, 2.6rem);
-      font-weight: 800; margin-bottom: 1rem;
-    }
-    .section-sub { color: var(--muted); font-size: 1.05rem; max-width: 620px; }
+    .container { max-width: 1140px; margin: 0 auto; }
+    .section-label { font-size: .73rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--accent2); margin-bottom: .7rem; }
+    .section-title { font-size: clamp(1.7rem,3.5vw,2.7rem); font-weight: 800; margin-bottom: .9rem; }
+    .section-sub { color: var(--muted); font-size: 1rem; max-width: 600px; margin-bottom: 2.5rem; }
+    .fade-up { opacity: 0; transform: translateY(30px); transition: opacity .65s ease, transform .65s ease; }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
 
-    /* ── PROBLEM ── */
-    #problem { background: var(--bg-soft); }
-    .problem-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem; margin-top: 3rem;
+    /* ── VIDEO SECTION ── */
+    #demo { background: var(--bg-soft); }
+    .video-container {
+      width: 100%; border-radius: 16px; overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 32px 100px rgba(0,0,0,.7);
     }
-    .problem-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 1.6rem;
-    }
-    .problem-card .icon { font-size: 2rem; margin-bottom: .8rem; }
-    .problem-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; }
-    .problem-card p { color: var(--muted); font-size: .9rem; }
+    .video-container video { width: 100%; display: block; }
 
-    /* ── HOW IT WORKS ── */
-    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-top: 3rem; }
-    .step {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 2rem 1.6rem;
-      position: relative;
+    /* ── SLIDE GALLERY ── */
+    #slides { background: var(--bg); }
+    .gallery-tabs { display: flex; gap: .5rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .gallery-tab {
+      padding: .5rem 1.2rem; border-radius: 8px; border: 1.5px solid var(--border);
+      background: transparent; color: var(--muted); cursor: pointer;
+      font-size: .85rem; font-weight: 600; transition: all .2s;
     }
-    .step-num {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 2.2rem; height: 2.2rem; border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      font-size: .85rem; font-weight: 800; color: #fff;
-      margin-bottom: 1rem;
+    .gallery-tab.active { border-color: var(--accent); background: rgba(124,58,237,.15); color: #a78bfa; }
+    .gallery-tab:hover:not(.active) { border-color: var(--accent2); color: var(--text); }
+    .gallery-panel { display: none; }
+    .gallery-panel.active { display: block; }
+    .slides-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+    .slide-card {
+      border-radius: 10px; overflow: hidden; border: 1px solid var(--border);
+      cursor: pointer; transition: transform .2s, border-color .2s, box-shadow .2s;
+      background: var(--surface);
     }
-    .step h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .5rem; }
-    .step p { color: var(--muted); font-size: .9rem; }
-    .step .step-tags { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; }
-    .tag {
-      font-size: .72rem; font-weight: 600; padding: .2rem .6rem;
-      border-radius: 999px; border: 1px solid;
+    .slide-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 12px 40px rgba(124,58,237,.25); }
+    .slide-card img { width: 100%; display: block; }
+
+    /* ── LIGHTBOX ── */
+    .lightbox {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(0,0,0,.92); align-items: center; justify-content: center;
+      padding: 1.5rem;
     }
+    .lightbox.open { display: flex; }
+    .lightbox-inner { position: relative; max-width: 1000px; width: 100%; }
+    .lightbox img { width: 100%; border-radius: 10px; display: block; }
+    .lightbox-close {
+      position: absolute; top: -2.5rem; right: 0; background: none; border: none;
+      color: #fff; font-size: 1.8rem; cursor: pointer; line-height: 1;
+    }
+    .lightbox-nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,.1); border: none; color: #fff;
+      font-size: 2rem; padding: .5rem .8rem; cursor: pointer; border-radius: 6px;
+      transition: background .2s;
+    }
+    .lightbox-nav:hover { background: rgba(255,255,255,.2); }
+    .lightbox-prev { left: -3.5rem; }
+    .lightbox-next { right: -3.5rem; }
+
+    /* ── PIPELINE ── */
+    #pipeline { background: var(--bg-soft); }
+    .pipeline-steps { display: grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap: 1.4rem; margin-top: 2rem; }
+    .pipeline-step { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.6rem; position: relative; }
+    .step-num { display: inline-flex; align-items: center; justify-content: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: linear-gradient(135deg,var(--accent),var(--accent2)); font-size: .84rem; font-weight: 800; color: #fff; margin-bottom: .9rem; }
+    .pipeline-step h3 { font-size: 1rem; font-weight: 700; margin-bottom: .4rem; }
+    .pipeline-step p { color: var(--muted); font-size: .87rem; }
+    .tags-row { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .8rem; }
+    .tag { font-size: .7rem; font-weight: 700; padding: .18rem .55rem; border-radius: 999px; border: 1px solid; }
     .tag-pur { border-color: rgba(124,58,237,.5); color: #a78bfa; background: rgba(124,58,237,.1); }
     .tag-cyn { border-color: rgba(6,182,212,.5); color: var(--accent2); background: rgba(6,182,212,.1); }
     .tag-grn { border-color: rgba(34,197,94,.5); color: var(--success); background: rgba(34,197,94,.1); }
+    .tag-gold { border-color: rgba(245,158,11,.5); color: var(--gold); background: rgba(245,158,11,.1); }
 
     /* ── FEATURES ── */
-    #features { background: var(--bg-soft); }
-    .features-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.2rem; margin-top: 3rem;
-    }
-    .feature-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 1.4rem 1.6rem;
-      display: flex; gap: 1rem; align-items: flex-start;
-      transition: border-color .2s, transform .2s;
-    }
+    #features { background: var(--bg); }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(300px,1fr)); gap: 1.1rem; }
+    .feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.4rem; display: flex; gap: .9rem; align-items: flex-start; transition: border-color .2s, transform .2s; }
     .feature-card:hover { border-color: var(--accent); transform: translateY(-3px); }
-    .feature-icon {
-      font-size: 1.5rem; flex-shrink: 0;
-      width: 2.8rem; height: 2.8rem;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(124,58,237,.12); border-radius: 8px;
-    }
-    .feature-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: .3rem; }
-    .feature-card p { color: var(--muted); font-size: .85rem; }
+    .ficon { font-size: 1.4rem; width: 2.6rem; height: 2.6rem; display: flex; align-items: center; justify-content: center; background: rgba(124,58,237,.12); border-radius: 8px; flex-shrink: 0; }
+    .feature-card h3 { font-size: .92rem; font-weight: 700; margin-bottom: .25rem; }
+    .feature-card p { color: var(--muted); font-size: .83rem; }
 
-    /* ── ARCHITECTURE ── */
-    .arch {
-      margin-top: 3rem;
-      background: #0d1117; border: 1px solid var(--border);
-      border-radius: 12px; padding: 2rem;
-      overflow-x: auto;
-    }
-    .arch-flow {
-      display: flex; align-items: center; justify-content: center;
-      flex-wrap: wrap; gap: 0; min-width: 640px;
-    }
-    .arch-node {
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 8px; padding: .6rem 1rem;
-      font-size: .8rem; font-weight: 600; text-align: center;
-      min-width: 110px;
-    }
-    .arch-node .sub { color: var(--muted); font-size: .68rem; font-weight: 400; display: block; }
-    .arch-arrow { color: var(--accent2); font-size: 1.2rem; padding: 0 .3rem; flex-shrink: 0; }
-    .arch-node.highlight { border-color: var(--accent); background: rgba(124,58,237,.12); }
-    .arch-node.highlight2 { border-color: var(--accent2); background: rgba(6,182,212,.1); }
+    /* ── POLICY SECTION ── */
+    #policy { background: var(--bg-soft); }
+    .policy-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 1.5rem; margin-top: 2rem; }
+    .policy-card { border-radius: 12px; padding: 2rem; border: 2px solid; }
+    .policy-card.pe { border-color: rgba(124,58,237,.5); background: rgba(124,58,237,.06); }
+    .policy-card.nonpe { border-color: rgba(6,182,212,.5); background: rgba(6,182,212,.06); }
+    .policy-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; }
+    .policy-card.pe h3 { color: #a78bfa; }
+    .policy-card.nonpe h3 { color: var(--accent2); }
+    .policy-list { list-style: none; display: flex; flex-direction: column; gap: .65rem; }
+    .policy-list li { display: flex; gap: .6rem; font-size: .88rem; color: var(--muted); }
+    .policy-list li::before { content: '✓'; color: var(--success); font-weight: 700; flex-shrink: 0; }
+    .policy-list code { background: rgba(255,255,255,.07); padding: .1rem .35rem; border-radius: 4px; font-size: .8rem; color: var(--text); }
 
-    /* ── RULE SAMPLE ── */
-    #sample { background: var(--bg-soft); }
-    .rule-block {
-      margin-top: 2.5rem;
-      background: #0d1117; border: 1px solid var(--border);
-      border-radius: 12px; overflow: hidden;
-      box-shadow: 0 8px 40px rgba(0,0,0,.5);
-    }
-    .rule-bar {
-      background: #161b22; padding: .65rem 1.2rem;
-      display: flex; align-items: center; justify-content: space-between;
-    }
+    /* ── SAMPLE RULE ── */
+    #sample { background: var(--bg); }
+    .rule-block { background: #0d1117; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; box-shadow: 0 12px 60px rgba(0,0,0,.6); }
+    .rule-bar { background: #161b22; padding: .65rem 1.2rem; display: flex; align-items: center; justify-content: space-between; }
     .rule-bar-left { display: flex; align-items: center; gap: .5rem; }
-    .rule-filename { font-size: .8rem; color: var(--muted); font-family: monospace; }
-    .rule-badge {
-      font-size: .7rem; font-weight: 700; padding: .15rem .55rem;
-      border-radius: 999px; background: rgba(34,197,94,.15);
-      color: var(--success); border: 1px solid rgba(34,197,94,.3);
-    }
-    .rule-body {
-      padding: 1.4rem 1.6rem; font-family: 'Courier New', monospace;
-      font-size: .8rem; line-height: 1.85; overflow-x: auto;
-    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; } .dot-y { background: #febc2e; } .dot-g { background: #28c840; }
+    .rule-filename { font-size: .78rem; color: var(--muted); font-family: monospace; margin-left: .5rem; }
+    .rule-badge { font-size: .7rem; font-weight: 700; padding: .15rem .55rem; border-radius: 999px; background: rgba(34,197,94,.15); color: var(--success); border: 1px solid rgba(34,197,94,.3); }
+    .rule-body { padding: 1.4rem 1.8rem; font-family: 'Courier New', monospace; font-size: .8rem; line-height: 1.9; overflow-x: auto; }
+    .t-pur { color: #a78bfa; } .t-cyn { color: var(--accent2); } .t-yel { color: #fbbf24; } .t-wht { color: #e5e7eb; } .t-grn { color: var(--success); } .t-dim { color: #4b5563; }
 
-    /* ── STATS ── */
-    .stats-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem; margin-top: 3rem;
-    }
-    .stat-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 1.8rem 1.4rem; text-align: center;
-    }
-    .stat-num {
-      font-size: 2.4rem; font-weight: 800;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .stat-label { color: var(--muted); font-size: .85rem; margin-top: .3rem; }
+    /* ── DOWNLOADS ── */
+    #downloads { background: var(--bg-soft); }
+    .download-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap: 1.5rem; margin-top: 2rem; }
+    .download-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 2rem; display: flex; flex-direction: column; gap: 1rem; transition: border-color .2s, transform .2s; }
+    .download-card:hover { border-color: var(--accent2); transform: translateY(-3px); }
+    .download-icon { font-size: 2.2rem; }
+    .download-card h3 { font-size: 1.05rem; font-weight: 700; }
+    .download-card p { color: var(--muted); font-size: .87rem; flex: 1; }
+    .download-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .6rem 1.3rem; border-radius: 8px; background: var(--accent); color: #fff; text-decoration: none; font-weight: 700; font-size: .85rem; transition: opacity .2s; width: fit-content; }
+    .download-btn:hover { opacity: .85; }
 
     /* ── FOOTER ── */
-    footer {
-      background: var(--bg-soft); border-top: 1px solid var(--border);
-      padding: 3rem 1.5rem; text-align: center;
-    }
-    .footer-logo {
-      font-size: 1.3rem; font-weight: 800;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      margin-bottom: .8rem;
-    }
+    footer { background: var(--bg); border-top: 1px solid var(--border); padding: 3rem 1.5rem; text-align: center; }
+    .footer-logo { font-size: 1.3rem; font-weight: 900; background: linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: .7rem; }
     .footer-sub { color: var(--muted); font-size: .9rem; margin-bottom: 1.5rem; }
-    .footer-links { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; }
-    .footer-links a {
-      color: var(--muted); text-decoration: none; font-size: .9rem;
-      transition: color .2s;
-    }
+    .footer-links { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .footer-links a { color: var(--muted); text-decoration: none; font-size: .88rem; transition: color .2s; }
     .footer-links a:hover { color: var(--accent2); }
 
-    /* ── ANIMATIONS ── */
-    .fade-up {
-      opacity: 0; transform: translateY(28px);
-      transition: opacity .6s ease, transform .6s ease;
-    }
-    .fade-up.visible { opacity: 1; transform: translateY(0); }
-
-    /* ── RESPONSIVE ── */
     @media (max-width: 640px) {
       nav { padding: .8rem 1rem; }
       .nav-links { display: none; }
-      .arch-flow { min-width: unset; flex-direction: column; gap: .3rem; }
-      .arch-arrow { transform: rotate(90deg); }
+      .lightbox-prev { left: -.5rem; }
+      .lightbox-next { right: -.5rem; }
     }
   </style>
 </head>
@@ -313,122 +224,133 @@
 <nav>
   <span class="nav-logo">⚡ YARA VT Portal</span>
   <ul class="nav-links">
-    <li><a href="#problem">Problem</a></li>
-    <li><a href="#how">How It Works</a></li>
+    <li><a href="#demo">Demo</a></li>
+    <li><a href="#slides">Slides</a></li>
+    <li><a href="#pipeline">Pipeline</a></li>
     <li><a href="#features">Features</a></li>
-    <li><a href="#architecture">Architecture</a></li>
-    <li><a href="#sample">Sample Rule</a></li>
+    <li><a href="#downloads">Downloads</a></li>
   </ul>
-  <a class="nav-cta" href="https://github.com/MaorGabay222/yara-vt-portal" target="_blank">View on GitHub →</a>
+  <a class="nav-cta" href="https://github.com/MaorGabay222/yara-vt-portal" target="_blank">GitHub →</a>
 </nav>
 
-<!-- HERO -->
+<!-- HERO (video background) -->
 <section class="hero">
-  <div class="hero-badge">🛡️ Threat Hunting · YARA · AI-Powered</div>
-  <h1>From Hash to Hunting Rule.<br><span>In Seconds.</span></h1>
-  <p class="hero-sub">
-    Automated YARA rule generation powered by Google Gemini, VirusTotal, and
-    real sample validation inside a Docker sandbox. No manual RE required.
-  </p>
-  <div class="hero-btns">
-    <a class="btn-primary" href="https://github.com/MaorGabay222/yara-vt-portal" target="_blank">View on GitHub</a>
-    <a class="btn-secondary" href="#how">See How It Works ↓</a>
+  <div class="hero-video-wrap">
+    <video autoplay muted loop playsinline>
+      <source src="assets/YARA_VT_Portal.mp4" type="video/mp4" />
+    </video>
   </div>
-
-  <!-- Terminal demo -->
-  <div class="terminal fade-up visible">
-    <div class="terminal-bar">
-      <div class="dot dot-r"></div>
-      <div class="dot dot-y"></div>
-      <div class="dot dot-g"></div>
-    </div>
-    <div class="terminal-body">
-      <div><span class="t-dim">$</span> <span class="t-cyn">yara-vt-portal</span> <span class="t-wht">--hash e25892603c42e34bd7ba0d8ea73be600</span></div>
-      <div>&nbsp;</div>
-      <div><span class="t-grn">✓</span> VirusTotal report fetched — <span class="t-yel">58/72 engines detected</span></div>
-      <div><span class="t-grn">✓</span> Sample downloaded into Docker sandbox</div>
-      <div><span class="t-grn">✓</span> Static analysis complete — <span class="t-cyn">2,841 strings · PE binary · CAPA: 7 capabilities</span></div>
-      <div><span class="t-grn">✓</span> Gemini chat session opened — generating YARA rule…</div>
-      <div><span class="t-grn">✓</span> Policy gate passed — <span class="t-pur">9 strings · pe.imphash() · pe.version_info</span></div>
-      <div><span class="t-grn">✓</span> YARA compiled successfully</div>
-      <div><span class="t-grn">✓</span> Rule tested against sample — <span class="t-grn">VALID_MATCH ✓</span></div>
-      <div>&nbsp;</div>
-      <div><span class="t-dim">Rule saved →</span> <span class="t-cyn">Win64_Stealer_e2589260.yar</span> <span class="cursor"></span></div>
-    </div>
-  </div>
-</section>
-
-<!-- PROBLEM -->
-<section id="problem">
-  <div class="container">
-    <p class="section-label">The Problem</p>
-    <h2 class="section-title fade-up">Writing YARA rules is hard.<br>Doing it at scale is harder.</h2>
-    <p class="section-sub fade-up">
-      Security teams waste hours crafting rules manually — only to find they miss the sample or flood the pipeline with false positives.
+  <div class="hero-content">
+    <div class="hero-badge">🛡️ Malware Analysis · YARA · AI-Powered</div>
+    <h1>Automated Malware Intelligence<br><span>&amp; Self-Repairing YARA Generation</span></h1>
+    <p class="hero-tagline">
+      Bridging the gap between static analysis, threat intelligence, and Large Language Models.<br>
+      From hash to validated YARA rule — in seconds.
     </p>
-    <div class="problem-grid">
-      <div class="problem-card fade-up">
-        <div class="icon">⏱️</div>
-        <h3>Hours per rule</h3>
-        <p>Manual YARA authoring requires deep reverse engineering knowledge. A single quality rule can take hours of binary analysis.</p>
+    <div class="hero-btns">
+      <a class="btn-primary" href="https://github.com/MaorGabay222/yara-vt-portal" target="_blank">View on GitHub</a>
+      <a class="btn-secondary" href="#demo">Watch Demo ↓</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="hero-stat-num">6</div><div class="hero-stat-label">AI Repair Cycles</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">3</div><div class="hero-stat-label">CTI Sources</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">120</div><div class="hero-stat-label">Max Strings (Script)</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">N−2</div><div class="hero-stat-label">Condition Threshold</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO VIDEO -->
+<section id="demo">
+  <div class="container">
+    <p class="section-label">Product Demo</p>
+    <h2 class="section-title fade-up">See the full pipeline in action.</h2>
+    <p class="section-sub fade-up">Watch the system go from raw hash input to a compiled, validated YARA rule — including a live AI self-correction cycle.</p>
+    <div class="video-container fade-up">
+      <video controls preload="metadata">
+        <source src="assets/YARA_VT_Portal.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE GALLERY -->
+<section id="slides">
+  <div class="container">
+    <p class="section-label">Technical Deep-Dive</p>
+    <h2 class="section-title fade-up">Architecture & engineering, slide by slide.</h2>
+    <p class="section-sub fade-up">Click any slide to expand. Browse both technical briefings below.</p>
+    <div class="gallery-tabs fade-up">
+      <button class="gallery-tab active" onclick="switchTab('auto')">📐 Autonomous YARA Intelligence</button>
+      <button class="gallery-tab" onclick="switchTab('tactical')">🎯 Tactical YARA Engineering</button>
+    </div>
+
+    <!-- Autonomous -->
+    <div class="gallery-panel active" id="panel-auto">
+      <div class="slides-grid">
+        <div class="slide-card fade-up" onclick="openLightbox('auto',1)"><img src="assets/slides/auto_p01.jpg" alt="YARA VT Portal — Title" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',2)"><img src="assets/slides/auto_p02.jpg" alt="End-to-End Architecture" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',3)"><img src="assets/slides/auto_p03.jpg" alt="Multi-Source Intelligence" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',4)"><img src="assets/slides/auto_p04.jpg" alt="Slide 4" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',5)"><img src="assets/slides/auto_p05.jpg" alt="7-Step Generation Engine" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',6)"><img src="assets/slides/auto_p06.jpg" alt="Slide 6" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',7)"><img src="assets/slides/auto_p07.jpg" alt="Policy Gates" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',8)"><img src="assets/slides/auto_p08.jpg" alt="Slide 8" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',9)"><img src="assets/slides/auto_p09.jpg" alt="AI Self-Correction" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',10)"><img src="assets/slides/auto_p10.jpg" alt="Slide 10" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',11)"><img src="assets/slides/auto_p11.jpg" alt="Slide 11" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',12)"><img src="assets/slides/auto_p12.jpg" alt="Slide 12" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',13)"><img src="assets/slides/auto_p13.jpg" alt="Slide 13" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',14)"><img src="assets/slides/auto_p14.jpg" alt="Slide 14" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('auto',15)"><img src="assets/slides/auto_p15.jpg" alt="Slide 15" loading="lazy" /></div>
       </div>
-      <div class="problem-card fade-up">
-        <div class="icon">🎯</div>
-        <h3>Rules that miss the sample</h3>
-        <p>Without validating against the actual binary, rules often miss the target — especially in memory-scanning scenarios where PE headers are wiped.</p>
-      </div>
-      <div class="problem-card fade-up">
-        <div class="icon">🔥</div>
-        <h3>False positive floods</h3>
-        <p>Generic strings produce rules that match everything. Analysts need rare, sample-specific indicators — which takes expertise to identify.</p>
-      </div>
-      <div class="problem-card fade-up">
-        <div class="icon">📋</div>
-        <h3>No unified workflow</h3>
-        <p>Pivoting between VirusTotal, IDA, CAPA, and a text editor for every hash is fragmented and not repeatable at scale.</p>
+    </div>
+
+    <!-- Tactical -->
+    <div class="gallery-panel" id="panel-tactical">
+      <div class="slides-grid">
+        <div class="slide-card fade-up" onclick="openLightbox('tactical',1)"><img src="assets/slides/tactical_p01.jpg" alt="Tactical YARA Generation" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('tactical',2)"><img src="assets/slides/tactical_p02.jpg" alt="Slide 2" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('tactical',3)"><img src="assets/slides/tactical_p03.jpg" alt="Slide 3" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('tactical',4)"><img src="assets/slides/tactical_p04.jpg" alt="Secure Artifact Extraction" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('tactical',5)"><img src="assets/slides/tactical_p05.jpg" alt="Slide 5" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('tactical',6)"><img src="assets/slides/tactical_p06.jpg" alt="Domain-Aware Profiles" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('tactical',7)"><img src="assets/slides/tactical_p07.jpg" alt="Slide 7" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('tactical',8)"><img src="assets/slides/tactical_p08.jpg" alt="Slide 8" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('tactical',9)"><img src="assets/slides/tactical_p09.jpg" alt="Slide 9" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('tactical',10)"><img src="assets/slides/tactical_p10.jpg" alt="Slide 10" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('tactical',11)"><img src="assets/slides/tactical_p11.jpg" alt="Slide 11" loading="lazy" /></div>
+        <div class="slide-card fade-up" onclick="openLightbox('tactical',12)"><img src="assets/slides/tactical_p12.jpg" alt="Slide 12" loading="lazy" /></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section id="how">
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightboxOutside(event)">
+  <div class="lightbox-inner">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <button class="lightbox-nav lightbox-prev" onclick="navLightbox(-1)">‹</button>
+    <img id="lightbox-img" src="" alt="" />
+    <button class="lightbox-nav lightbox-next" onclick="navLightbox(1)">›</button>
+  </div>
+</div>
+
+<!-- PIPELINE -->
+<section id="pipeline">
   <div class="container">
     <p class="section-label">How It Works</p>
-    <h2 class="section-title fade-up">A fully automated pipeline,<br>end to end.</h2>
-    <p class="section-sub fade-up">Paste a hash. The rest is handled automatically.</p>
-    <div class="steps">
-      <div class="step fade-up">
-        <div class="step-num">1</div>
-        <h3>Intelligence Gathering</h3>
-        <p>The system queries VirusTotal for the file report, threat labels, tags, and detection ratio. Optionally enriches with AlienVault OTX and OpenCTI for campaign and actor attribution.</p>
-        <div class="step-tags">
-          <span class="tag tag-cyn">VirusTotal API</span>
-          <span class="tag tag-cyn">OTX</span>
-          <span class="tag tag-cyn">OpenCTI</span>
-        </div>
-      </div>
-      <div class="step fade-up">
-        <div class="step-num">2</div>
-        <h3>Sandbox Analysis</h3>
-        <p>The actual sample is downloaded and injected into a hardened Docker container. <code>analyze.py</code> extracts strings, parses PE metadata (imphash, imports, exports, sections), measures entropy, and runs CAPA behavioral analysis.</p>
-        <div class="step-tags">
-          <span class="tag tag-pur">Docker</span>
-          <span class="tag tag-pur">pefile</span>
-          <span class="tag tag-pur">CAPA</span>
-          <span class="tag tag-pur">strings</span>
-        </div>
-      </div>
-      <div class="step fade-up">
-        <div class="step-num">3</div>
-        <h3>AI Rule Generation</h3>
-        <p>All artifacts are fed into a Google Gemini stateful chat session. The AI generates a YARA rule following strict quality constraints. If the rule fails validation, the exact error is fed back into the same session — up to 6 correction cycles.</p>
-        <div class="step-tags">
-          <span class="tag tag-grn">Gemini 2.5 Flash</span>
-          <span class="tag tag-grn">Stateful Chat</span>
-          <span class="tag tag-grn">YARA CLI</span>
-        </div>
-      </div>
+    <h2 class="section-title fade-up">The 7-Step Autonomous Generation Engine.</h2>
+    <p class="section-sub fade-up">A coordinated sequence across intelligence, sandbox analysis, AI generation, and live validation.</p>
+    <div class="pipeline-steps">
+      <div class="pipeline-step fade-up"><div class="step-num">1</div><h3>String Selection</h3><p>Raw binary strings are scored and filtered using a weighted pattern library. High-signal strings (URLs, APIs, crypto hints, PS variables) are prioritized. Cap: 80 for PE / 120 for scripts.</p><div class="tags-row"><span class="tag tag-cyn">Scoring Gate</span><span class="tag tag-cyn">Deduplication</span></div></div>
+      <div class="pipeline-step fade-up"><div class="step-num">2</div><h3>Context Building</h3><p>PE metadata (imphash, sections, imports), CAPA behavioral capabilities, MITRE ATT&CK techniques, and VT threat labels are assembled into a structured JSON payload.</p><div class="tags-row"><span class="tag tag-pur">CAPA</span><span class="tag tag-pur">pefile</span><span class="tag tag-cyn">VirusTotal</span></div></div>
+      <div class="pipeline-step fade-up"><div class="step-num">3</div><h3>AI Generation</h3><p>A persistent Gemini 2.5 Flash chat session receives the full context payload. Temperature 0.2. The AI generates a YARA rule following strict path-specific CRITICAL REQUIREMENTS.</p><div class="tags-row"><span class="tag tag-grn">Gemini 2.5 Flash</span><span class="tag tag-grn">Stateful Chat</span></div></div>
+      <div class="pipeline-step fade-up"><div class="step-num">4</div><h3>Normalization</h3><p>Rule text is cleaned: markdown fences stripped, <code>ascii wide</code> enforced on text strings, <code>import "pe"</code> auto-injected if pe.* is used, duplicate imports deduplicated.</p><div class="tags-row"><span class="tag tag-gold">Auto-Fix</span></div></div>
+      <div class="pipeline-step fade-up"><div class="step-num">5</div><h3>Policy Gate</h3><p>Deterministic checks: string count minimums (7 PE / 15 non-PE), dual PE anchors, N−2 condition threshold, regex ban, entropy field ban, import statement validation.</p><div class="tags-row"><span class="tag tag-pur">Policy Enforcement</span></div></div>
+      <div class="pipeline-step fade-up"><div class="step-num">6</div><h3>Compile & Test</h3><p>Rule is uploaded to the Docker sandbox. YARA CLI compiles it and runs it against the actual binary. Result: <code>VALID_MATCH</code>, <code>VALID_NO_MATCH</code>, or <code>INVALID_RUN</code>.</p><div class="tags-row"><span class="tag tag-grn">YARA CLI</span><span class="tag tag-grn">Live Sandbox</span></div></div>
+      <div class="pipeline-step fade-up"><div class="step-num">7</div><h3>Stateful Repair Loop</h3><p>On failure, the exact error is fed back into the same chat session. Compile errors inject violation lists. VALID_NO_MATCH injects per-string match telemetry. Up to 6 cycles before final result.</p><div class="tags-row"><span class="tag tag-gold">Self-Healing AI</span><span class="tag tag-gold">6 Cycles Max</span></div></div>
     </div>
   </div>
 </section>
@@ -439,136 +361,52 @@
     <p class="section-label">Features</p>
     <h2 class="section-title fade-up">Built for the way analysts actually work.</h2>
     <div class="features-grid">
-      <div class="feature-card fade-up">
-        <div class="feature-icon">⚡</div>
-        <div>
-          <h3>One-Click YARA Generation</h3>
-          <p>Paste any MD5, SHA1, or SHA256. The full pipeline runs automatically and returns a validated, ready-to-deploy rule.</p>
-        </div>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">🔄</div>
-        <div>
-          <h3>Stateful AI Repair Loop</h3>
-          <p>Up to 6 correction cycles. The AI sees its own errors and corrects them in the same conversation — no context loss between retries.</p>
-        </div>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">🧬</div>
-        <div>
-          <h3>Dual-Path Logic</h3>
-          <p>PE binaries get structural anchors (pe.imphash + pe.version_info) with hybrid OR for memory scanning. Scripts/PowerShell/JS require 15 strings to prevent false positives.</p>
-        </div>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">🎯</div>
-        <div>
-          <h3>Smart No-Match Feedback</h3>
-          <p>If the rule compiles but doesn't match the sample, the system tells the AI exactly which string identifiers matched and which didn't — and asks it to fix accordingly.</p>
-        </div>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">📦</div>
-        <div>
-          <h3>Bulk Processing</h3>
-          <p>Upload a list of hundreds of hashes. Process them sequentially. Download a ZIP of all rules or a single Retrohunt-ready file of only validated rules.</p>
-        </div>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">🔍</div>
-        <div>
-          <h3>VirusTotal Retrohunt Export</h3>
-          <p>One button. Clean concatenation of valid rules with deduplicated imports — ready to upload directly to VT Retrohunt without any manual editing.</p>
-        </div>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">🛡️</div>
-        <div>
-          <h3>Docker Sandbox Isolation</h3>
-          <p>All sample analysis happens in a hardened container: 1GB memory limit, no-new-privileges, isolated from the host filesystem.</p>
-        </div>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">🧠</div>
-        <div>
-          <h3>AI Expert Report</h3>
-          <p>A separate Gemini call produces structured threat attribution: malware family, campaign, MITRE ATT&CK mapping, confidence score, and recommended response actions.</p>
-        </div>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">🌐</div>
-        <div>
-          <h3>Full CTI Enrichment</h3>
-          <p>VirusTotal detections, AlienVault OTX pulses, and OpenCTI structured intelligence — all in one view per hash.</p>
-        </div>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">🗄️</div>
-        <div>
-          <h3>Searchable History Database</h3>
-          <p>Every analysis is stored in SQLite. Filter by hash, date, or YARA result. Export any entry as a full PDF report.</p>
-        </div>
-      </div>
+      <div class="feature-card fade-up"><div class="ficon">⚡</div><div><h3>One-Click Rule Generation</h3><p>Paste any MD5, SHA1, or SHA256. The full pipeline — VT, sandbox, AI, validation — runs automatically.</p></div></div>
+      <div class="feature-card fade-up"><div class="ficon">🔄</div><div><h3>Stateful AI Repair Loop</h3><p>Up to 6 correction cycles. The AI sees its exact errors in the same conversation — no context loss between retries.</p></div></div>
+      <div class="feature-card fade-up"><div class="ficon">🧬</div><div><h3>Dual-Path Generation Logic</h3><p>PE binaries and non-PE scripts follow completely different generation rules, string minimums, and structural anchors.</p></div></div>
+      <div class="feature-card fade-up"><div class="ficon">🎯</div><div><h3>Smart No-Match Feedback</h3><p>If the rule compiles but misses the sample, the AI receives a per-string match/miss telemetry map and rewrites accordingly.</p></div></div>
+      <div class="feature-card fade-up"><div class="ficon">📦</div><div><h3>Bulk Batch Processing</h3><p>Upload hundreds of hashes. Process sequentially. Download a ZIP of all rules or a single VirusTotal Retrohunt-ready file.</p></div></div>
+      <div class="feature-card fade-up"><div class="ficon">🔍</div><div><h3>VT Retrohunt Export</h3><p>One button. Validated rules only. Deduplicated imports. Ready to paste directly into VirusTotal Retrohunt.</p></div></div>
+      <div class="feature-card fade-up"><div class="ficon">🛡️</div><div><h3>Hardened Docker Sandbox</h3><p>1GB memory limit, no-new-privileges, bridge-only network. Sample injected via Docker archive API — never written to host disk.</p></div></div>
+      <div class="feature-card fade-up"><div class="ficon">🌐</div><div><h3>Multi-Source CTI Enrichment</h3><p>VirusTotal detections, AlienVault OTX pulses, and OpenCTI structured intelligence — all in one view per hash.</p></div></div>
+      <div class="feature-card fade-up"><div class="ficon">🧠</div><div><h3>AI Expert Report</h3><p>A separate Gemini call produces structured threat attribution: malware family, campaign, MITRE ATT&CK mapping, confidence score.</p></div></div>
+      <div class="feature-card fade-up"><div class="ficon">🗄️</div><div><h3>Searchable History DB</h3><p>Every analysis stored in SQLite. Filter by hash, date, result. Export any entry as a full PDF report.</p></div></div>
     </div>
   </div>
 </section>
 
-<!-- ARCHITECTURE -->
-<section id="architecture">
+<!-- DUAL-PATH POLICY -->
+<section id="policy">
   <div class="container">
-    <p class="section-label">Architecture</p>
-    <h2 class="section-title fade-up">How the pipeline is wired.</h2>
-    <p class="section-sub fade-up">A single hash triggers a coordinated sequence across four distinct systems.</p>
-    <div class="arch fade-up">
-      <div class="arch-flow">
-        <div class="arch-node">
-          Hash Input
-          <span class="sub">MD5 / SHA1 / SHA256</span>
-        </div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-node highlight2">
-          VirusTotal API
-          <span class="sub">Report + Download</span>
-        </div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-node highlight">
-          Docker Sandbox
-          <span class="sub">analyze.py · CAPA · PE</span>
-        </div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-node highlight">
-          Google Gemini
-          <span class="sub">Stateful Chat · 6 cycles</span>
-        </div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-node highlight2">
-          YARA CLI
-          <span class="sub">Compile + Match Test</span>
-        </div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-node">
-          Result
-          <span class="sub">VALID_MATCH / Export</span>
-        </div>
+    <p class="section-label">Strict Architectural Constraints</p>
+    <h2 class="section-title fade-up">Two generation paths. Zero tolerance for policy violations.</h2>
+    <p class="section-sub fade-up">The policy gate runs deterministically before and after every AI response. Violations send the rule back for correction automatically.</p>
+    <div class="policy-cards">
+      <div class="policy-card pe fade-up">
+        <h3>🔵 Path A — PE Binary Rules</h3>
+        <ul class="policy-list">
+          <li>Minimum <strong>7 unique high-signal strings</strong></li>
+          <li>MUST include <code>pe.imphash()</code> — locks import table behavior</li>
+          <li>MUST include <code>pe.version_info</code> — locks version metadata</li>
+          <li>Hybrid OR condition — string-only fallback fires even if PE headers are wiped in memory</li>
+          <li>Condition threshold: exactly <code>total_strings - 2</code></li>
+          <li><code>import "pe"</code> auto-injected if missing</li>
+        </ul>
+      </div>
+      <div class="policy-card nonpe fade-up">
+        <h3>🟦 Path B — Non-PE (Scripts, PowerShell, Docs)</h3>
+        <ul class="policy-list">
+          <li>Minimum <strong>15 unique high-signal strings</strong> (7 if low-signal sample)</li>
+          <li>STRICT BAN on <code>pe.*</code> module usage</li>
+          <li>Condition threshold: exactly <code>total_strings - 2</code></li>
+          <li>Relaxed string scoring — PS variables and .NET type casts receive non-zero scores</li>
+          <li>String cap raised to 120 to give the AI enough raw material</li>
+          <li>No filesize constraints — rule must work in memory</li>
+        </ul>
       </div>
     </div>
-
-    <div style="margin-top:2.5rem; display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.2rem;">
-      <div class="problem-card fade-up">
-        <div class="icon">🔬</div>
-        <h3>analyze.py (in container)</h3>
-        <p>Extracts strings (ASCII + UTF-16LE), parses PE headers with pefile, measures Shannon entropy, and runs CAPA with a 180-second timeout. Outputs structured <code>artifacts.json</code>.</p>
-      </div>
-      <div class="problem-card fade-up">
-        <div class="icon">🤖</div>
-        <h3>Gemini Chat Session</h3>
-        <p>One persistent session per hash. Temperature 0.2, max 4096 tokens. Policy violations and compile errors are fed back into the same session to preserve full context across repair cycles.</p>
-      </div>
-      <div class="problem-card fade-up">
-        <div class="icon">📏</div>
-        <h3>Policy Gate</h3>
-        <p>Deterministic checks before and after every AI response: string count, condition threshold (N−2), PE anchor presence, regex ban, entropy field ban, import statement validation.</p>
-      </div>
+    <div style="margin-top:1.2rem; background:rgba(245,158,11,.07); border:1px solid rgba(245,158,11,.3); border-radius:10px; padding:1rem 1.4rem; color: var(--gold); font-size:.87rem;">
+      🔒 <strong>Universal hard blocks</strong> (both paths): Regex string definitions (<code>/pattern/</code>), <code>pe.sections[i].entropy</code>, bare <code>imphash</code> identifier without <code>pe.</code>, and any <code>filesize</code> constraint.
     </div>
   </div>
 </section>
@@ -577,15 +415,12 @@
 <section id="sample">
   <div class="container">
     <p class="section-label">Sample Output</p>
-    <h2 class="section-title fade-up">A real rule, for a real sample.</h2>
-    <p class="section-sub fade-up">Generated, validated, and ready for VirusTotal Retrohunt. No manual editing required.</p>
-
+    <h2 class="section-title fade-up">A real rule. Validated. Retrohunt-ready.</h2>
+    <p class="section-sub fade-up">Generated in one pass, tested against the actual binary, zero manual editing required.</p>
     <div class="rule-block fade-up">
       <div class="rule-bar">
         <div class="rule-bar-left">
-          <div class="dot dot-r"></div>
-          <div class="dot dot-y"></div>
-          <div class="dot dot-g"></div>
+          <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
           <span class="rule-filename">Win64_Stealer_Crypt32_e25892.yar</span>
         </div>
         <span class="rule-badge">✓ VALID_MATCH</span>
@@ -594,12 +429,11 @@
         <span class="t-pur">import</span> <span class="t-cyn">"pe"</span><br><br>
         <span class="t-pur">rule</span> <span class="t-yel">Win64_Stealer_Crypt32_e25892603</span><br>
         <span class="t-wht">{</span><br>
-        &nbsp;&nbsp;<span class="t-grn">meta:</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cyn">author</span> = <span class="t-wht">"YARA-GPT"</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cyn">description</span> = <span class="t-wht">"Detects credential-stealing PE with crypt32 certificate store manipulation"</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cyn">sha256</span> = <span class="t-wht">"e25892603c42e34bd7ba0d8ea73be600d898cadc..."</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cyn">date</span> = <span class="t-wht">"2026-03-22"</span><br><br>
-        &nbsp;&nbsp;<span class="t-grn">strings:</span><br>
+        &nbsp;&nbsp;<span class="t-cyn">meta:</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;author = <span class="t-wht">"YARA-GPT"</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;description = <span class="t-wht">"Detects credential-stealing PE with crypt32 certificate store manipulation"</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;sha256 = <span class="t-wht">"e25892603c42e34bd7ba0d8ea73be600d898cadc..."</span><br><br>
+        &nbsp;&nbsp;<span class="t-cyn">strings:</span><br>
         &nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cyn">$s1</span> = <span class="t-wht">"CertDuplicateCertificateChain"</span> ascii wide<br>
         &nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cyn">$s2</span> = <span class="t-wht">"CertAddCertificateContextToStore"</span> ascii wide<br>
         &nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cyn">$s3</span> = <span class="t-wht">"WakeByAddressSingle"</span> ascii wide<br>
@@ -607,8 +441,8 @@
         &nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cyn">$s5</span> = <span class="t-wht">"CertEnumCertificatesInStore"</span> ascii wide<br>
         &nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cyn">$s6</span> = <span class="t-wht">"CertGetCertificateChain"</span> ascii wide<br>
         &nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cyn">$s7</span> = <span class="t-wht">"CertFreeCertificateChain"</span> ascii wide<br><br>
-        &nbsp;&nbsp;<span class="t-grn">condition:</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;<span class="t-dim">// Hybrid OR: PE anchors for disk scanning, string-only fallback for memory dumps</span><br>
+        &nbsp;&nbsp;<span class="t-cyn">condition:</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="t-dim">// Hybrid OR — PE anchors for disk, string-only fallback for memory dumps</span><br>
         &nbsp;&nbsp;&nbsp;&nbsp;(<span class="t-pur">pe.imphash</span>() == <span class="t-wht">"a1b2c3d4e5f6..."</span><br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and <span class="t-pur">pe.version_info</span>[<span class="t-wht">"ProductName"</span>] == <span class="t-wht">"CertMgr Utility"</span><br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and <span class="t-cyn">5 of ($s*)</span>)<br>
@@ -619,27 +453,24 @@
   </div>
 </section>
 
-<!-- STATS -->
-<section>
+<!-- DOWNLOADS -->
+<section id="downloads">
   <div class="container">
-    <p class="section-label" style="text-align:center">By The Numbers</p>
-    <h2 class="section-title fade-up" style="text-align:center">Designed for precision at scale.</h2>
-    <div class="stats-grid">
-      <div class="stat-card fade-up">
-        <div class="stat-num">6</div>
-        <div class="stat-label">Max AI repair cycles per hash</div>
+    <p class="section-label">Technical Resources</p>
+    <h2 class="section-title fade-up">Read the full engineering briefs.</h2>
+    <p class="section-sub fade-up">Two complementary documents covering the architecture, policy design, and tactical implementation details.</p>
+    <div class="download-cards">
+      <div class="download-card fade-up">
+        <div class="download-icon">📐</div>
+        <h3>Autonomous YARA Intelligence</h3>
+        <p>15-page architecture brief covering the end-to-end threat automation pipeline, multi-source CTI convergence, the 7-step generation engine, AI self-correction cycles, and policy gate design.</p>
+        <a class="download-btn" href="assets/Autonomous_YARA_Intelligence.pdf" download>⬇ Download PDF</a>
       </div>
-      <div class="stat-card fade-up">
-        <div class="stat-num">120</div>
-        <div class="stat-label">Max strings fed to AI for script files</div>
-      </div>
-      <div class="stat-card fade-up">
-        <div class="stat-num">3</div>
-        <div class="stat-label">CTI intelligence sources per hash</div>
-      </div>
-      <div class="stat-card fade-up">
-        <div class="stat-num">N−2</div>
-        <div class="stat-label">Condition threshold — precision with resilience</div>
+      <div class="download-card fade-up">
+        <div class="download-icon">🎯</div>
+        <h3>Tactical YARA Engineering</h3>
+        <p>12-page tactical brief on building deterministic trust in AI-driven threat detection — domain-aware generation profiles, secure artifact extraction, and rapid incident response integration.</p>
+        <a class="download-btn" href="assets/Tactical_YARA_Engineering.pdf" download>⬇ Download PDF</a>
       </div>
     </div>
   </div>
@@ -651,21 +482,60 @@
   <p class="footer-sub">Built for threat hunters, SOC analysts, and CTI teams who need rules — not busywork.</p>
   <div class="footer-links">
     <a href="https://github.com/MaorGabay222/yara-vt-portal" target="_blank">GitHub Repository</a>
-    <a href="https://github.com/MaorGabay222/yara-vt-portal/blob/main/README.md" target="_blank">Documentation</a>
+    <a href="assets/Autonomous_YARA_Intelligence.pdf" download>Technical Brief</a>
+    <a href="assets/Tactical_YARA_Engineering.pdf" download>Engineering Guide</a>
     <a href="https://www.virustotal.com" target="_blank">VirusTotal</a>
   </div>
-  <p style="margin-top:2rem; color:#374151; font-size:.8rem;">Built with Streamlit · Google Gemini · Docker · YARA</p>
+  <p style="color:#374151;font-size:.78rem;">Built with Streamlit · Google Gemini 2.5 Flash · Docker · YARA · CAPA</p>
 </footer>
 
 <script>
-  // Intersection Observer for fade-up animations
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) { e.target.classList.add('visible'); }
-    });
-  }, { threshold: 0.12 });
-
+  // ── FADE-UP ANIMATION ──
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
   document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  // ── GALLERY TABS ──
+  function switchTab(name) {
+    document.querySelectorAll('.gallery-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.gallery-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+
+  // ── LIGHTBOX ──
+  let lbSrc = 'auto', lbIdx = 1;
+  const lbCounts = { auto: 15, tactical: 12 };
+  const lbPrefixes = { auto: 'auto', tactical: 'tactical' };
+
+  function openLightbox(src, idx) {
+    lbSrc = src; lbIdx = idx;
+    updateLightboxImg();
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function closeLightboxOutside(e) {
+    if (e.target === document.getElementById('lightbox')) closeLightbox();
+  }
+  function navLightbox(dir) {
+    lbIdx = ((lbIdx - 1 + dir + lbCounts[lbSrc]) % lbCounts[lbSrc]) + 1;
+    updateLightboxImg();
+  }
+  function updateLightboxImg() {
+    const p = String(lbIdx).padStart(2, '0');
+    document.getElementById('lightbox-img').src = `assets/slides/${lbPrefixes[lbSrc]}_p${p}.jpg`;
+  }
+  document.addEventListener('keydown', e => {
+    if (!document.getElementById('lightbox').classList.contains('open')) return;
+    if (e.key === 'ArrowRight') navLightbox(1);
+    if (e.key === 'ArrowLeft') navLightbox(-1);
+    if (e.key === 'Escape') closeLightbox();
+  });
 </script>
 
 </body>
