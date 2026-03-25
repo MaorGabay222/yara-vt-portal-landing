@@ -191,6 +191,28 @@
     .rule-body { padding: 1.4rem 1.8rem; font-family: 'Courier New', monospace; font-size: .8rem; line-height: 1.9; overflow-x: auto; }
     .t-pur { color: #a78bfa; } .t-cyn { color: var(--accent2); } .t-yel { color: #fbbf24; } .t-wht { color: #e5e7eb; } .t-grn { color: var(--success); } .t-dim { color: #4b5563; }
 
+    /* ── LIVE DEMO SECTION ── */
+    #live-demo { background: var(--bg); }
+    .live-demo-wrap {
+      position: relative; border-radius: 16px; overflow: hidden;
+      border: 1px solid rgba(34,197,94,.35);
+      box-shadow: 0 0 0 1px rgba(34,197,94,.1), 0 32px 100px rgba(0,0,0,.7);
+    }
+    .live-demo-wrap video { width: 100%; display: block; }
+    .live-badge {
+      position: absolute; top: 1rem; left: 1rem; z-index: 10;
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: rgba(34,197,94,.15); border: 1px solid rgba(34,197,94,.5);
+      color: var(--success); border-radius: 999px; padding: .3rem .8rem;
+      font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+      backdrop-filter: blur(8px);
+    }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.7); } }
+    .live-caption-row { display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 1.4rem; }
+    .live-caption-item { display: flex; align-items: center; gap: .5rem; font-size: .85rem; color: var(--muted); }
+    .live-caption-item strong { color: var(--text); }
+
     /* ── SANDBOX SECTION ── */
     #sandbox { background: var(--bg); }
     .sandbox-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: center; margin-top: 2rem; }
@@ -271,7 +293,8 @@
 <nav>
   <span class="nav-logo">⚡ ThreatMatch</span>
   <ul class="nav-links">
-    <li><a href="#demo">Demo</a></li>
+    <li><a href="#demo">Overview</a></li>
+    <li><a href="#live-demo">Live Demo</a></li>
     <li><a href="#slides">Slides</a></li>
     <li><a href="#sandbox">Sandbox</a></li>
     <li><a href="#ai-report">AI Report</a></li>
@@ -319,6 +342,28 @@
         <source src="assets/YARA_VT_Portal.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
+    </div>
+  </div>
+</section>
+
+<!-- LIVE DEMO -->
+<section id="live-demo">
+  <div class="container">
+    <p class="section-label">Real-World Live Demo</p>
+    <h2 class="section-title fade-up">From hash to validated YARA rule — unscripted, unedited.</h2>
+    <p class="section-sub fade-up">This is ThreatMatch running live. Watch a real hash get submitted, the sandbox extract artifacts, the AI draft a rule, and the policy gate validate it — start to finish in one session.</p>
+    <div class="live-demo-wrap fade-up">
+      <div class="live-badge"><div class="live-dot"></div>LIVE SESSION</div>
+      <video controls preload="metadata">
+        <source src="assets/real_demo.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
+    <div class="live-caption-row fade-up">
+      <div class="live-caption-item">🔑 <span><strong>Input:</strong> Raw MD5 / SHA256 hash</span></div>
+      <div class="live-caption-item">🧪 <span><strong>Analysis:</strong> VT enrichment + Docker sandbox</span></div>
+      <div class="live-caption-item">🤖 <span><strong>Generation:</strong> Gemini 2.5 Flash stateful session</span></div>
+      <div class="live-caption-item">✅ <span><strong>Output:</strong> <code style="background:rgba(34,197,94,.1);color:var(--success);padding:.1rem .35rem;border-radius:4px;font-size:.8rem;">VALID_MATCH</code> YARA rule</span></div>
     </div>
   </div>
 </section>
