@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YARA VT Portal — Automated Malware Intelligence & Self-Repairing YARA Generation</title>
-  <meta name="description" content="Bridging the gap between static analysis, threat intelligence, and Large Language Models. From hash to validated YARA rule in seconds." />
+  <title>ThreatMatch — Automated Malware Intelligence & Self-Repairing YARA Generation</title>
+  <meta name="description" content="ThreatMatch: Bridging the gap between static analysis, threat intelligence, and Large Language Models. From hash to validated YARA rule in seconds." />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -191,6 +191,53 @@
     .rule-body { padding: 1.4rem 1.8rem; font-family: 'Courier New', monospace; font-size: .8rem; line-height: 1.9; overflow-x: auto; }
     .t-pur { color: #a78bfa; } .t-cyn { color: var(--accent2); } .t-yel { color: #fbbf24; } .t-wht { color: #e5e7eb; } .t-grn { color: var(--success); } .t-dim { color: #4b5563; }
 
+    /* ── SANDBOX SECTION ── */
+    #sandbox { background: var(--bg); }
+    .sandbox-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: center; margin-top: 2rem; }
+    @media (max-width: 800px) { .sandbox-layout { grid-template-columns: 1fr; } }
+    .sandbox-diagram {
+      background: #0d1117; border: 1px solid var(--border); border-radius: 16px; padding: 2rem;
+      font-family: monospace; font-size: .82rem; line-height: 1.8;
+    }
+    .sandbox-header { display: flex; align-items: center; gap: .5rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: .8rem; }
+    .sandbox-header-text { color: var(--muted); font-size: .75rem; }
+    .sandbox-box {
+      border: 2px dashed rgba(245,158,11,.4); border-radius: 12px; padding: 1.2rem;
+      background: rgba(245,158,11,.04); position: relative;
+    }
+    .sandbox-label {
+      position: absolute; top: -0.7rem; left: 1rem;
+      background: var(--gold); color: #000; font-size: .65rem; font-weight: 800;
+      padding: .1rem .5rem; border-radius: 4px; letter-spacing: .05em;
+    }
+    .sandbox-tool { display: flex; align-items: flex-start; gap: .5rem; padding: .4rem 0; color: var(--muted); }
+    .sandbox-tool-name { color: var(--accent2); font-weight: 700; min-width: 7rem; }
+    .sandbox-shield { display: flex; flex-direction: column; gap: 1rem; }
+    .shield-item { display: flex; gap: 1rem; align-items: flex-start; }
+    .shield-icon { font-size: 1.6rem; width: 3rem; flex-shrink: 0; }
+    .shield-item h4 { font-size: .92rem; font-weight: 700; margin-bottom: .2rem; color: var(--text); }
+    .shield-item p { color: var(--muted); font-size: .84rem; }
+
+    /* ── AI REPORT SECTION ── */
+    #ai-report { background: var(--bg-soft); }
+    .report-layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 2.5rem; align-items: start; margin-top: 2rem; }
+    @media (max-width: 800px) { .report-layout { grid-template-columns: 1fr; } }
+    .report-fields { display: flex; flex-direction: column; gap: .8rem; }
+    .report-field { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.2rem; display: flex; gap: 1rem; align-items: flex-start; }
+    .report-field-icon { font-size: 1.3rem; width: 2.2rem; flex-shrink: 0; }
+    .report-field h4 { font-size: .88rem; font-weight: 700; margin-bottom: .15rem; }
+    .report-field p { font-size: .8rem; color: var(--muted); }
+    .report-mock { background: #0d1117; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; box-shadow: 0 12px 60px rgba(0,0,0,.5); }
+    .report-mock-bar { background: #161b22; padding: .65rem 1.2rem; display: flex; align-items: center; justify-content: space-between; }
+    .report-mock-title { font-size: .78rem; color: var(--muted); font-family: monospace; }
+    .report-confidence { font-size: .7rem; font-weight: 700; padding: .15rem .55rem; border-radius: 999px; background: rgba(245,158,11,.15); color: var(--gold); border: 1px solid rgba(245,158,11,.3); }
+    .report-mock-body { padding: 1.4rem; font-size: .82rem; line-height: 1.9; }
+    .rm-key { color: var(--accent2); font-weight: 700; }
+    .rm-val { color: var(--text); }
+    .rm-dim { color: #4b5563; }
+    .rm-grn { color: var(--success); }
+    .rm-gold { color: var(--gold); }
+
     /* ── DOWNLOADS ── */
     #downloads { background: var(--bg-soft); }
     .download-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap: 1.5rem; margin-top: 2rem; }
@@ -222,11 +269,12 @@
 
 <!-- NAV -->
 <nav>
-  <span class="nav-logo">⚡ YARA VT Portal</span>
+  <span class="nav-logo">⚡ ThreatMatch</span>
   <ul class="nav-links">
     <li><a href="#demo">Demo</a></li>
     <li><a href="#slides">Slides</a></li>
-    <li><a href="#pipeline">Pipeline</a></li>
+    <li><a href="#sandbox">Sandbox</a></li>
+    <li><a href="#ai-report">AI Report</a></li>
     <li><a href="#features">Features</a></li>
     <li><a href="#downloads">Downloads</a></li>
   </ul>
@@ -241,11 +289,11 @@
     </video>
   </div>
   <div class="hero-content">
-    <div class="hero-badge">🛡️ Malware Analysis · YARA · AI-Powered</div>
+    <div class="hero-badge">🛡️ ThreatMatch · Malware Analysis · AI-Powered</div>
     <h1>Automated Malware Intelligence<br><span>&amp; Self-Repairing YARA Generation</span></h1>
     <p class="hero-tagline">
-      Bridging the gap between static analysis, threat intelligence, and Large Language Models.<br>
-      From hash to validated YARA rule — in seconds.
+      ThreatMatch bridges the gap between static analysis, threat intelligence, and Large Language Models.<br>
+      From hash to validated, deployment-ready YARA rule — in seconds.
     </p>
     <div class="hero-btns">
       <a class="btn-primary" href="https://github.com/MaorGabay222/yara-vt-portal" target="_blank">View on GitHub</a>
@@ -271,6 +319,145 @@
         <source src="assets/YARA_VT_Portal.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
+    </div>
+  </div>
+</section>
+
+<!-- SANDBOX STATIC ANALYSIS -->
+<section id="sandbox">
+  <div class="container">
+    <p class="section-label">Secure Static Analysis</p>
+    <h2 class="section-title fade-up">Every file analyzed inside a hardened Docker sandbox.</h2>
+    <p class="section-sub fade-up">ThreatMatch never executes malware on your machine. Analysis runs inside an ephemeral, isolated container that is destroyed immediately after extraction.</p>
+    <div class="sandbox-layout">
+
+      <div class="fade-up">
+        <div class="sandbox-diagram">
+          <div class="sandbox-header">
+            <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+            <span class="sandbox-header-text">ubuntu:22.04 · memory_limit=1GB · network=bridge · no-new-privileges</span>
+          </div>
+          <div class="sandbox-box">
+            <span class="sandbox-label">ISOLATED CONTAINER</span>
+            <div class="sandbox-tool"><span class="sandbox-tool-name">strings</span><span>Extract ASCII + UTF-16LE printable sequences from the raw binary</span></div>
+            <div class="sandbox-tool"><span class="sandbox-tool-name">pefile</span><span>Parse PE headers: imports, exports, sections, version resources, imphash</span></div>
+            <div class="sandbox-tool"><span class="sandbox-tool-name">CAPA</span><span>Identify behavioral capabilities (crypto, persistence, injection, C2) mapped to MITRE ATT&CK</span></div>
+            <div class="sandbox-tool"><span class="sandbox-tool-name">YARA CLI</span><span>Compile and match the generated rule against the sample — live sandbox test</span></div>
+          </div>
+          <div style="margin-top:1rem; color:#374151; font-size:.75rem; text-align:center;">
+            ↑ Sample injected via Docker archive API · never written to host disk · container purged on exit
+          </div>
+        </div>
+      </div>
+
+      <div class="sandbox-shield fade-up">
+        <div class="shield-item">
+          <div class="shield-icon">🔒</div>
+          <div>
+            <h4>Zero Host Exposure</h4>
+            <p>The malware sample is streamed directly into the container via the Docker archive API. It is never written to your host filesystem — not even as a temp file.</p>
+          </div>
+        </div>
+        <div class="shield-item">
+          <div class="shield-icon">📦</div>
+          <div>
+            <h4>Ephemeral Environment</h4>
+            <p>The container is created fresh for each analysis and destroyed immediately afterward. No state, no residue, no filesystem artifacts remain between sessions.</p>
+          </div>
+        </div>
+        <div class="shield-item">
+          <div class="shield-icon">🌐</div>
+          <div>
+            <h4>Network Isolation</h4>
+            <p>Bridge-only networking — the container cannot reach the internet or your internal network. Any C2 callback attempt inside the container is silently dropped.</p>
+          </div>
+        </div>
+        <div class="shield-item">
+          <div class="shield-icon">⚙️</div>
+          <div>
+            <h4>Privilege Constraints</h4>
+            <p><code style="background:rgba(255,255,255,.07);padding:.1rem .35rem;border-radius:4px;font-size:.8rem;">--no-new-privileges</code> flag prevents any process inside the container from escalating permissions — even if the sample attempts a privilege escalation exploit.</p>
+          </div>
+        </div>
+        <div class="shield-item">
+          <div class="shield-icon">🧬</div>
+          <div>
+            <h4>CAPA Behavioral Mapping</h4>
+            <p>Beyond strings, CAPA identifies what the binary <em>does</em>: credential dumping, process injection, registry persistence, anti-analysis tricks. This behavioral intelligence feeds directly into the YARA generation context.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- AI EXPERT REPORT -->
+<section id="ai-report">
+  <div class="container">
+    <p class="section-label">AI Expert Report</p>
+    <h2 class="section-title fade-up">Not just a rule — a full threat intelligence report.</h2>
+    <p class="section-sub fade-up">After YARA generation, ThreatMatch runs a second dedicated Gemini analysis call to produce a structured expert report on the threat. No copy-paste from forums — pure AI-driven attribution.</p>
+
+    <div class="report-layout">
+
+      <div class="report-fields fade-up">
+        <div class="report-field">
+          <div class="report-field-icon">🏷️</div>
+          <div><h4>Malware Family Classification</h4><p>Identifies the specific malware family (e.g., AgentTesla, Cobalt Strike, AsyncRAT) with confidence score and supporting evidence from the extracted artifacts.</p></div>
+        </div>
+        <div class="report-field">
+          <div class="report-field-icon">🎭</div>
+          <div><h4>Threat Actor Attribution</h4><p>Cross-references VT threat labels, OTX pulses, and CAPA capabilities to suggest likely threat actor clusters or campaigns associated with this sample.</p></div>
+        </div>
+        <div class="report-field">
+          <div class="report-field-icon">🗺️</div>
+          <div><h4>MITRE ATT&CK Mapping</h4><p>Lists the specific Tactics, Techniques, and Sub-techniques identified in the sample — sourced from CAPA output and AI inference. Formatted as T-codes (e.g., T1055.001).</p></div>
+        </div>
+        <div class="report-field">
+          <div class="report-field-icon">⚠️</div>
+          <div><h4>Severity & TLP Assessment</h4><p>Assigns a severity level (Critical / High / Medium / Low) and a suggested TLP color for sharing — based on the combination of detections, capabilities, and threat actor context.</p></div>
+        </div>
+        <div class="report-field">
+          <div class="report-field-icon">🔗</div>
+          <div><h4>IOC Summary</h4><p>Consolidates all indicators: hashes, threat labels from 70+ AV engines, OTX campaign tags, and key strings/imports — in a single copyable block for SIEM ingestion.</p></div>
+        </div>
+        <div class="report-field">
+          <div class="report-field-icon">📋</div>
+          <div><h4>Analyst Narrative</h4><p>A concise paragraph written in plain English describing what the sample does, how it operates, and its likely deployment context — suitable for executive briefings or incident reports.</p></div>
+        </div>
+      </div>
+
+      <div class="report-mock fade-up">
+        <div class="report-mock-bar">
+          <span class="report-mock-title">threatmatch_expert_report_e25892.json</span>
+          <span class="report-confidence">🧠 Confidence: HIGH</span>
+        </div>
+        <div class="report-mock-body">
+          <span class="rm-key">"malware_family"</span>: <span class="rm-val">"AgentTesla v3 (Stealer)"</span>,<br>
+          <span class="rm-key">"confidence"</span>: <span class="rm-gold">"HIGH"</span>,<br>
+          <span class="rm-key">"severity"</span>: <span class="rm-gold">"CRITICAL"</span>,<br>
+          <span class="rm-key">"tlp"</span>: <span class="rm-val">"AMBER"</span>,<br><br>
+          <span class="rm-key">"mitre_attack"</span>: [<br>
+          &nbsp;&nbsp;<span class="rm-val">"T1555.003"</span>, <span class="rm-dim">// Credentials from Web Browsers</span><br>
+          &nbsp;&nbsp;<span class="rm-val">"T1005"</span>, &nbsp;&nbsp;&nbsp;&nbsp;<span class="rm-dim">// Data from Local System</span><br>
+          &nbsp;&nbsp;<span class="rm-val">"T1071.001"</span>, <span class="rm-dim">// Web Protocols (C2)</span><br>
+          &nbsp;&nbsp;<span class="rm-val">"T1027"</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="rm-dim">// Obfuscated Files</span><br>
+          ],<br><br>
+          <span class="rm-key">"threat_actor_hint"</span>: <span class="rm-val">"TA505 / FIN7 overlap"</span>,<br>
+          <span class="rm-key">"detections"</span>: <span class="rm-gold">58</span> / 72,<br><br>
+          <span class="rm-key">"narrative"</span>: <span class="rm-val">"This sample is a credential-stealing</span><br>
+          <span class="rm-val">&nbsp;implant consistent with AgentTesla</span><br>
+          <span class="rm-val">&nbsp;v3. It systematically harvests saved</span><br>
+          <span class="rm-val">&nbsp;credentials from Chrome, Firefox and</span><br>
+          <span class="rm-val">&nbsp;Outlook, then exfiltrates via SMTP.</span><br>
+          <span class="rm-val">&nbsp;The Crypt32 import pattern and mutex</span><br>
+          <span class="rm-val">&nbsp;string are characteristic of this</span><br>
+          <span class="rm-val">&nbsp;campaign cluster."</span>,<br><br>
+          <span class="rm-key">"yara_status"</span>: <span class="rm-grn">"VALID_MATCH"</span><br>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -430,7 +617,7 @@
         <span class="t-pur">rule</span> <span class="t-yel">Win64_Stealer_Crypt32_e25892603</span><br>
         <span class="t-wht">{</span><br>
         &nbsp;&nbsp;<span class="t-cyn">meta:</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;author = <span class="t-wht">"YARA-GPT"</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;author = <span class="t-wht">"ThreatMatch"</span><br>
         &nbsp;&nbsp;&nbsp;&nbsp;description = <span class="t-wht">"Detects credential-stealing PE with crypt32 certificate store manipulation"</span><br>
         &nbsp;&nbsp;&nbsp;&nbsp;sha256 = <span class="t-wht">"e25892603c42e34bd7ba0d8ea73be600d898cadc..."</span><br><br>
         &nbsp;&nbsp;<span class="t-cyn">strings:</span><br>
@@ -478,7 +665,7 @@
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-logo">⚡ YARA VT Portal</div>
+  <div class="footer-logo">⚡ ThreatMatch</div>
   <p class="footer-sub">Built for threat hunters, SOC analysts, and CTI teams who need rules — not busywork.</p>
   <div class="footer-links">
     <a href="https://github.com/MaorGabay222/yara-vt-portal" target="_blank">GitHub Repository</a>
